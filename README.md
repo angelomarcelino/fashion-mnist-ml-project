@@ -173,16 +173,16 @@ The `GerenicCNN` builder was then used to create more diverse architectures.
 ```json
 // Rede Muitos FC
 {
-	"in_channels": 1,
-	"num_classes": 10,
-	"input_size": 28,
-	"amnt_cov_layers": 2,
-	"cov_kernel_sizes": [3, 3],
-	"cov_features": [5, 5],
-	"max_pool_sizes": [2, 2],
-	"amnt_fc_layers": 10,
-	"fc_sizes": [int(1024 + i * (25 - 1024) / (9 - 1)) for i in range(9)],
-	"p": 0.3
+  "in_channels": 1,
+  "num_classes": 10,
+  "input_size": 28,
+  "amnt_cov_layers": 2,
+  "cov_kernel_sizes": [3, 3],
+  "cov_features": [5, 5],
+  "max_pool_sizes": [2, 2],
+  "amnt_fc_layers": 10,
+  "fc_sizes": [int(1024 + i * (25 - 1024) / (9 - 1)) for i in range(9)],
+  "p": 0.3
 },
 ```
 
