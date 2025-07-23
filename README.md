@@ -222,10 +222,85 @@ The activation maps show what parts of an input image are "activated" or emphasi
 
 ![Intermediate Activations for generic_2](results/generic_2/intermediate_outputs.png)
 
+
+## Learning Rate Optimization
+
+This second phase of the project focused on enhancing the training methodology by implementing a systematic process for finding the optimal **learning rate (LR)**. The goal was to replace the manual, trial-and-error approach from Part 1 with a more robust and automated technique.
+
+### Implementation Process
+
+The integration was accomplished in three main steps, building upon the existing framework.
+
+1.  **Technique and Tooling**: The **LR Range Test** technique was adopted for this task. For a robust implementation, the `torch-lr-finder` library was integrated into the project, providing a well-tested version of the algorithm.
+
+2.  **Integration into the `Architecture` Class**: A new method, `find_best_lr`, was added to the `Architecture` class. Its purpose is to encapsulate the entire LR finding logic. The key steps inside this method are:
+    - Saving the initial state of the model and optimizer to prevent the destructive test from affecting the final training.
+    - Instantiating `LRFinder` with the model's current components.
+    - Running the `range_test` and automatically retrieving the suggested LR, which is based on the point of the steepest loss gradient.
+    - Updating the instance's optimizer with this newly found learning rate.
+
+    ```python
+    # Key logic within the Architecture.find_best_lr method
+    def find_best_lr(self, data_loader, end_lr=1, num_iter=100, set_lr=True):
+        # --- Save model and optimizer states ---
+        model_checkpoint = deepcopy(self.model.state_dict())
+        optimizer_checkpoint = deepcopy(self.optimizer.state_dict())
+
+        # --- Instantiate finder and run the test ---
+        lr_finder = LRFinder(self.model, self.optimizer, self.loss_fn, device=self.device)
+        lr_finder.range_test(data_loader, end_lr=end_lr, num_iter=num_iter)
+        ax, best_lr = lr_finder.plot(log_lr=True, suggest_lr=True)
+
+        # --- Restore original states ---
+        self.model.load_state_dict(model_checkpoint)
+        self.optimizer.load_state_dict(optimizer_checkpoint)
+
+        # --- Update the optimizer with the found LR ---
+        if set_lr:
+            self.optimizer.param_groups[0]['lr'] = best_lr
+
+        return ax, best_lr
+    ```
+
+3.  **Automation in the `ModelFlow` Pipeline**: The `ModelFlow` class was updated to automate this process. A new boolean parameter, `find_best_lr`, was added to its constructor. When set to `True`, the pipeline automatically executes the `find_best_lr` method during initialization and saves the resulting plot as a training artifact.
+
+    ```python
+    # Example of the automated workflow
+    mflow = ModelFlow(
+        model=test_new_model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        model_name='test_new_model',
+        find_best_lr=True  # This flag triggers the automated LR search
+    )
+    ```
+
+### Results and Analysis
+
+The automated LR finding process was applied to the best-performing architecture from Part 1, `generic_2`.
+
+#### LR Finder Result
+
+The LR Range Test suggested an optimal learning rate of approximately **4.86e-03**, as shown by the red dot at the point of the steepest gradient in the plot below.
+
+![LR Finder Plot](results_2/test_new_model/lr_finder.png)
+
+#### Training with Optimized LR
+
+The model was subsequently trained for 10 epochs using this systematically chosen learning rate. Unfortunately, despite the more methodical approach, the final validation accuracy achieved was **86.33%**. This result did not surpass the best accuracy of **87.61%** obtained in Part 1 with a manually set LR.
+
+This suggests that for this specific architecture and dataset, the original manually-tuned LR was already close to an optimal value. While the automated process provides a more robust and reproducible methodology, it did not yield a direct performance improvement in this particular case.
+
+|           Loss Curve for `test_new_model`           |        Confusion Matrix for `test_new_model`        |
+| :-------------------------------------------------: | :---------------------------------------------------: |
+| ![Losses](results_2/test_new_model/losses.png) | ![CM](results_2/test_new_model/confusion_matrix.png) |
+
+
+
 ## Reproducibility
 
 The entire experimental process is contained within the `tarefa-1.ipynb` notebook. The code is structured to be fully reproducible:
 
-- **Execution**: Running the notebook from top to bottom will train all seven models sequentially.
+- **Execution**: Running the notebooks from top to bottom will train all models sequentially.
 - **Output**: All artifacts—including metric reports (`.csv`), plots (`.png`), and model checkpoints (`.pth`)—are automatically saved into the `results/` directory, with a dedicated subfolder for each model.
 - **Random Seed**: A fixed random seed (`42`) is used during training to ensure deterministic weight initialization and data shuffling, making the results consistent across runs.
