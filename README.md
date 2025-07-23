@@ -299,7 +299,7 @@ This suggests that for this specific architecture and dataset, the original manu
 
 ## Reproducibility
 
-The entire experimental process is contained within the `tarefa-1.ipynb` notebook. The code is structured to be fully reproducible:
+The entire experimental process is contained within the `tarefa-1.ipynb` and `tarefa-2.ipynb` notebooks. The code is structured to be fully reproducible:
 
 - **Execution**: Running the notebooks from top to bottom will train all models sequentially.
 - **Output**: All artifacts—including metric reports (`.csv`), plots (`.png`), and model checkpoints (`.pth`)—are automatically saved into the `results/` directory, with a dedicated subfolder for each model.
